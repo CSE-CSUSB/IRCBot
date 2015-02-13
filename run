@@ -7,4 +7,9 @@ echo ""
 echo "Running ${TARGET}..."
 echo ""
 
-gdb bin/$TARGET
+if [ "$1" -eq "debug" ] 
+then
+	gdb bin/$TARGET
+else
+	bin/./$TARGET
+fi

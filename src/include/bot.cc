@@ -101,7 +101,7 @@ void Bot::start()
         //buf is the data that is recived
 
         //Pass buf to the message handeler
-        msgHandel(buf);
+        msgHandle(buf);
 
 
         //If Ping Recived
@@ -232,10 +232,10 @@ void Bot::sendPong(string buf)
 
 }
 
-void Bot::msgHandel(string buf)
+void Bot::msgHandle(string buf)
 {
     if (charSearch(buf,"hi scooby")) {
-        sendData("PRIVMSG #ubuntu :hi, hows it going\r\n");
+        sendData("PRIVMSG ##cse-club :I am alive!\r\n");
     }
 
 }

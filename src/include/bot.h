@@ -16,7 +16,7 @@ private:
     string  timeNow();
     bool sendData(string msg);
     void sendPong(string buf);
-    void msgHandel(string buf);
+    void msgHandle(string buf);
 
 public:
     Bot(string _nick, string  _usr, string _server = "irc.freenode.net", string _port = "6667");
