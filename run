@@ -7,4 +7,4 @@ echo ""
 echo "Running ${TARGET}..."
 echo ""
 
-bin/./$TARGET
+gdb bin/$TARGET

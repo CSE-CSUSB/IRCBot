@@ -16,11 +16,13 @@
  # optimized binaries in the production build.
 ##
 
-CC := g++ -Werror
-CC_DEBUG := clang++ -g -stdlib=libc++
+CC := /opt/gcc4.8.2/bin/g++48 -Werror
+#CC_DEBUG := clang++ -stdlib=libc++
+CC_DEBUG := $(CC)
 CFLAGS := -std=c++11 -O3 -Wall -Wextra -Wformat=2 -Wpedantic -Wshadow \
 	-Wpointer-arith -Wcast-qual -Wstrict-overflow=1 -Wformat-nonliteral \
 	-Wuninitialized -fstack-protector -Wformat-security
+CFLAGS_DEBUG := -g
 
 SRC := src
 INCLUDE := $(SRC)/include
