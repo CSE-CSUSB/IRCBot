@@ -1,0 +1,15 @@
+#!/bin/bash
+
+TARGET=$(basename $(pwd))
+make $1
+
+echo ""
+echo "Running ${TARGET}..."
+echo ""
+
+if [ "$1" -eq "debug" ] 
+then
+	gdb bin/$TARGET
+else
+	bin/./$TARGET
+fi
