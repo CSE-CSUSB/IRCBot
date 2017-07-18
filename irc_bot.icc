@@ -87,6 +87,7 @@ void irc_bot::part(const std::string& channel, const std::string& msg)
 		stream_ << "PART " << channel << crlf;
 	else
 		stream_ << "PART " << channel << " :" << msg << crlf;
+	channels_.erase(channel);
 }
 
 void irc_bot::pong(const std::string& id)
