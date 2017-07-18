@@ -5,5 +5,5 @@ pause
 goto :eof
 )
 @echo on
-cl /I socketstream main.cc /link Ws2_32.lib
+cl /I socketstream main.cc irc_bot.cc irc_message.cc /link Ws2_32.lib
 

@@ -16,6 +16,4 @@ struct irc_message {
 	static irc_message from_string(const std::string& s);
 };
 
-#include "irc_message.icc"
-
 #endif

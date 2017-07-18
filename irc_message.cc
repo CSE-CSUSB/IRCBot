@@ -1,3 +1,5 @@
+#include "irc_message.hh"
+
 irc_message irc_message::from_string(const std::string& s)
 {
 	irc_message result;

@@ -4,7 +4,7 @@
  * Date: Jul 2017
  */
 
-socketbuf::socketbuf() :
+inline socketbuf::socketbuf() :
 	std::streambuf(),
 	socket_(socket_traits::invalid()),
 	buf_(nullptr),
@@ -13,7 +13,7 @@ socketbuf::socketbuf() :
 	userbuf_(false)
 {}
 
-socketbuf::socketbuf(socketbuf&& other) :
+inline socketbuf::socketbuf(socketbuf&& other) :
 	std::streambuf(),
 	socket_(socket_traits::invalid()),
 	buf_(nullptr),
@@ -24,7 +24,7 @@ socketbuf::socketbuf(socketbuf&& other) :
 	swap(other);
 }
 
-socketbuf& socketbuf::operator=(socketbuf&& other)
+inline socketbuf& socketbuf::operator=(socketbuf&& other)
 {
 	setg(nullptr, nullptr, nullptr);
 	setp(nullptr, nullptr);
@@ -38,7 +38,7 @@ socketbuf& socketbuf::operator=(socketbuf&& other)
 	return *this;
 }
 
-void socketbuf::swap(socketbuf& other)
+inline void socketbuf::swap(socketbuf& other)
 {
 	std::streambuf::swap(other);
 	std::swap(socket_, other.socket_);
@@ -48,7 +48,7 @@ void socketbuf::swap(socketbuf& other)
 	std::swap(userbuf_, other.userbuf_);
 }
 
-socketbuf::~socketbuf()
+inline socketbuf::~socketbuf()
 {
 	close();
 	if (buf_ != nullptr && !userbuf_)
@@ -58,7 +58,7 @@ socketbuf::~socketbuf()
 	pasize_ = 0;
 }
 
-socketbuf* socketbuf::setbuf(char_type* s, std::streamsize n)
+inline socketbuf* socketbuf::setbuf(char_type* s, std::streamsize n)
 {
 	if (n == 0) n = 1;
 	if (s != nullptr) {
@@ -76,14 +76,14 @@ socketbuf* socketbuf::setbuf(char_type* s, std::streamsize n)
 	return this;
 }
 
-int socketbuf::sync()
+inline int socketbuf::sync()
 {
 	int_type eof{traits_type::eof()};
 
 	return (overflow(eof) == eof) ? -1 : 0;
 }
 
-socketbuf::int_type socketbuf::overflow(int_type c)
+inline socketbuf::int_type socketbuf::overflow(int_type c)
 {
 	int_type result{traits_type::eof()};
 	std::streamsize put, pending;
@@ -115,7 +115,7 @@ socketbuf::int_type socketbuf::overflow(int_type c)
 	return result;
 }
 
-socketbuf::int_type socketbuf::underflow()
+inline socketbuf::int_type socketbuf::underflow()
 {
 	int_type result{traits_type::eof()};
 	std::streamsize got;
@@ -131,7 +131,7 @@ socketbuf::int_type socketbuf::underflow()
 	return result;
 }
 
-std::streamsize socketbuf::xsputn(const char_type* s, std::streamsize n)
+inline std::streamsize socketbuf::xsputn(const char_type* s, std::streamsize n)
 {
 	std::streamsize result{-1}, pending;
 
@@ -150,7 +150,7 @@ std::streamsize socketbuf::xsputn(const char_type* s, std::streamsize n)
 	return result;
 }
 
-std::streamsize socketbuf::xsgetn(char_type* s, std::streamsize n)
+inline std::streamsize socketbuf::xsgetn(char_type* s, std::streamsize n)
 {
 	std::streamsize avail, got, result;
 
@@ -171,7 +171,7 @@ std::streamsize socketbuf::xsgetn(char_type* s, std::streamsize n)
 	return result;
 }
 
-socketbuf* socketbuf::close()
+inline socketbuf* socketbuf::close()
 {
 	socketbuf* result{this};
 
@@ -183,7 +183,7 @@ socketbuf* socketbuf::close()
 	return result;
 }
 
-socketbuf* socketbuf::socket(socket_type socket)
+inline socketbuf* socketbuf::socket(socket_type socket)
 {
 	if (valid()) return nullptr;
 	if (socket == socket_traits::invalid()) return nullptr;

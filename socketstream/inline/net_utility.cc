@@ -9,12 +9,12 @@
 #include <sys/socket.h>
 #include <netdb.h>
 
-int sockets_init()
+inline int sockets_init()
 {
 	return 0;
 }
 
-int sockets_quit()
+inline int sockets_quit()
 {
 	return 0;
 }
@@ -24,20 +24,20 @@ int sockets_quit()
 #include <Winsock2.h>
 #include <Ws2tcpip.h>
 
-int sockets_init()
+inline int sockets_init()
 {
 	WSADATA wd;
 	return WSAStartup(MAKEWORD(2, 2), &wd) == 0 ? 0 : -1;
 }
 
-int sockets_quit()
+inline int sockets_quit()
 {
 	return WSACleanup == 0 ? 0 : -1;
 }
 
 #endif
 
-socket_traits::socket_type make_connected_socket(int family,
+inline socket_traits::socket_type make_connected_socket(int family,
 						int socktype,
 						int protocol,
 						const std::string& node,

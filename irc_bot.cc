@@ -1,3 +1,4 @@
+#include "irc_bot.hh"
 #include <algorithm>
 #include <cctype>
 

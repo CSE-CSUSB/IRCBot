@@ -79,6 +79,4 @@ public:
 	void quit(const std::string& message = "");
 };
 
-#include "irc_bot.icc"
-
 #endif
