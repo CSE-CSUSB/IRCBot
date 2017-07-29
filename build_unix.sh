@@ -1,4 +1,5 @@
 #!/bin/bash
 
-g++ -std=c++11 -I ./socketstream main.cc irc_bot.cc irc_message.cc
+g++ -std=c++11 -o main.out main.cc irc.cc
+
 

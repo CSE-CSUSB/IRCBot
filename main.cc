@@ -1,11 +1,14 @@
-#include "irc_bot.hh"
+#include "irc.hh"
 #include <iostream>
+#include <utility>
 using namespace std;
+
 
 int main(int argc, char* argv[])
 {
-	irc_bot bot;
-	irc_message msg;
+	swoope::socketstream client;
+	irc::message msg;
+	string line, nickname, owner;
 
 	if (argc != 6) {
 		cout << 
@@ -14,33 +17,30 @@ int main(int argc, char* argv[])
 			endl;
 		return 0;
 	}
-	sockets_init();
-	bot.nickname(argv[3]);
-	bot.owner(argv[4]);
+	nickname = argv[3];
+	owner = argv[4];
 	cout << "Connecting..." << endl;
-	bot.connect(argv[1], argv[2]);
-	if (!bot) {
-		cerr << "Failed to connect." << endl;
-		sockets_quit();
+	client = std::move(irc::connect(irc::connect_params{argv[1], argv[2],
+							nickname, owner, ""}));
+	if (!client) {
+		cout << "Failed to connect." << endl;
 		return 1;
 	}
 	cout << "Connection established." << endl;
-	bot.join(argv[5]);
-	while (bot.readmsg(msg)) {
+	client << "JOIN " << argv[5] << "\r\n" << flush;
+	while (std::getline(client, line)) {
+		if (line.back() == '\r') line.pop_back();
+		cout << line << endl;
+		msg = std::move(irc::message::from_string(line));
 		if (msg.command == "PING") {
-			bot.pong(msg.params.back());
+			client << "PONG " << msg.params.back() << "\r\n" <<
+								flush;
 		} else if (msg.command == "PRIVMSG") {
-			cout << msg.origin.nickname << " -> " <<
-						msg.params.front() << 
-						" : " << msg.params.back() <<
-						endl;
-			if (msg.origin.nickname == bot.owner() &&
-					msg.params.front() == bot.nickname()) {
-				bot.stream() << msg.params.back() << crlf;
+			if (msg.origin.nickname == owner &&
+					msg.params.front() == nickname) {
+				client << msg.params.back() << "\r\n" << flush;
 			}
 		}
-		
 	}
-	sockets_quit();
 	return 0;
 }
