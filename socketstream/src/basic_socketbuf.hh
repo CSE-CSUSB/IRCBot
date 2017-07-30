@@ -18,19 +18,21 @@ namespace swoope {
 	template <class SocketTraits>
 	struct basic_socketbuf_base {
 		/* Socket handle */
-		typename SocketTraits::socket_type socket_;
+		typename SocketTraits::socket_type socket;
 
 		/* Buffer used for unbuffered I/O */
-		char buf_[1];
+		char buf[1];
 
 		/* Start of buffer */
-		std::shared_ptr<char> base_;
+		std::shared_ptr<char> base;
 
 		std::streamsize
-			gasize_, /* get area size */
-			pasize_; /* put area size */
+			gasize, /* get area size */
+			pasize; /* put area size */
 
-		std::ios_base::openmode mode_;
+		std::ios_base::openmode mode;
+
+		bool is_open;
 
 		basic_socketbuf_base();
 		basic_socketbuf_base(
@@ -46,11 +48,21 @@ namespace swoope {
 
 	template <class SocketTraits>
 	class basic_socketbuf :
-		public std::streambuf,
-		private basic_socketbuf_base<SocketTraits> {
+	public std::streambuf,
+	private basic_socketbuf_base<SocketTraits> {
 	public:
-		typedef SocketTraits socket_traits;
-		typedef typename socket_traits::socket_type socket_type;
+		typedef basic_socketbuf_base<SocketTraits>
+					__socketbuf_base_type;
+		typedef std::streambuf __streambuf_type;
+	
+		typedef SocketTraits socket_traits_type;
+		typedef typename socket_traits_type::socket_type socket_type;
+
+		typedef char char_type;
+		typedef std::char_traits<char_type> traits_type;
+		typedef typename traits_type::int_type int_type;
+		typedef typename traits_type::pos_type pos_type;
+		typedef typename traits_type::off_type off_type;
 
 		basic_socketbuf();
 		basic_socketbuf(basic_socketbuf&& rhs);
@@ -62,14 +74,14 @@ namespace swoope {
 		void swap(basic_socketbuf& rhs);
 
 		bool is_open() const;
-		basic_socketbuf* open(socket_type s,
+		basic_socketbuf* open(socket_type&& s,
 					std::ios_base::openmode mode);
 		basic_socketbuf* open(const std::string& host,
 					const std::string& service,
 					std::ios_base::openmode mode);
 		basic_socketbuf* shutdown(std::ios_base::openmode how);
 		basic_socketbuf* close();
-		socket_type socket();
+		socket_type* rdsocket();
 	protected:
 		basic_socketbuf* setbuf(char_type* s, std::streamsize n);
 		int sync();
@@ -78,14 +90,6 @@ namespace swoope {
 		std::streamsize xsputn(const char_type* s, std::streamsize n);
 		int_type overflow(int_type c = traits_type::eof());
 	private:
-		typedef basic_socketbuf_base<socket_traits> socketbuf_base;
-		using socketbuf_base::socket_;
-		using socketbuf_base::buf_;
-		using socketbuf_base::base_;
-		using socketbuf_base::gasize_;
-		using socketbuf_base::pasize_;
-		using socketbuf_base::mode_;
-
 		basic_socketbuf(const basic_socketbuf& rhs);
 		void init_io();
 		std::streamsize read(char_type* s, std::streamsize n);
