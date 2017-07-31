@@ -1,5 +1,11 @@
 #include "irc.hh"
 
+/*
+ * irc.cc
+ * Author: Mark Swoope
+ * Date: July 2017
+ */
+
 void irc::message::clear()
 {
 	origin.nickname.clear();
