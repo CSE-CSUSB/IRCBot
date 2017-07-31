@@ -1,86 +1,186 @@
 #include "irc.hh"
-#include <iostream>
 
-swoope::socketstream irc::connect(const irc::connect_params& params)
+void irc::message::clear()
 {
-	swoope::socketstream client{}, result{};
-	irc::message msg;
-	std::string line;
-	int reg_progress{0};
-	const int reg_complete{10};
-
-	result.setstate(std::ios_base::failbit);
-	client.open(params.host, params.port);
-	if (!client) return std::move(result);
-	client.rdbuf()->pubsetbuf(nullptr, 1024);
-	client.unsetf(std::ios_base::unitbuf);
-	if (!params.password.empty())
-		client << "PASS " << params.password << "\r\n";
-	client <<
-		"NICK " << params.nickname << "\r\n" <<
-		"USER " << params.nickname << " 0 * :" << params.nickname <<
-							"\r\n";
-	client.flush();
-	if (!client) return std::move(result);
-	while (std::getline(client, line)) {
-		if (line.back() == '\r') line.pop_back();
-		std::cout << line << std::endl;
-		msg = std::move(irc::message::from_string(line));
-		if (msg.command == "PING") {
-			client << "PONG " << msg.params.back() << "\r\n" <<
-								std::flush;
-		} else if (std::all_of(msg.command.begin(), msg.command.end(),
-					[&](char c) -> bool
-					{ return std::isdigit(c); })) {
-			std::size_t number;
-
-			number = static_cast<std::size_t>(std::stoi(
-							msg.command));
-			if (number <= 4) {
-				reg_progress += number;
-				if (reg_progress == reg_complete) break;
-			} else if (number >= 400) {
-				client.setstate(std::ios_base::failbit);
-				break;
-			}
-		}
-	}
-	if (client) result = std::move(client);
-	return std::move(result);
+	origin.nickname.clear();
+	origin.user.clear();
+	origin.host.clear();
+	command.clear();
+	params.clear();
 }
 
-irc::message irc::message::from_string(const std::string& s)
+void irc::message::str(const std::string& s)
 {
-	irc::message result{};
+	std::stringstream sstream;
 	std::string prefix, param;
 
-	if (s.empty()) return result;
-	std::stringstream ss{s};
-	if (ss.peek() == ':') {
-		ss.ignore(1);
-		ss >> prefix;
+	clear();
+	if (s.empty()) return;
+	sstream.str(s);
+	if (sstream.peek() == ':') {
+		sstream.ignore(1);
+		sstream >> prefix;
 		if (prefix.find_first_of("!@") != std::string::npos) {
-			std::stringstream pss{prefix};
-			std::getline(pss, result.origin.nickname, '!');
-			std::getline(pss, result.origin.user, '@');
-			pss >> result.origin.host;
+			std::stringstream prefixstream;
+
+			prefixstream.str(prefix);
+			std::getline(prefixstream, origin.nickname, '!');
+			std::getline(prefixstream, origin.user, '@');
+			std::getline(prefixstream, origin.host);
 		} else {
-			result.origin.host = prefix;
+			origin.host = prefix;
 		}
 	}
-	ss >> result.command;
+	sstream >> command;
 	while (true) {
-		ss >> std::ws;
-		if (ss.peek() == ':') {
-			ss.ignore(1);
-			std::getline(ss, param);
-			if (param.back() == '\r') param.pop_back();
-			result.params.push_back(param);
+		sstream >> std::ws;
+		if (sstream.peek() == ':') {
+			sstream.ignore(1);
+			std::getline(sstream, param, '\r');
+			params.push_back(param);
 			break;
 		} else {
-			if (!(ss >> param)) break;
-			result.params.push_back(param);
+			sstream >> param;
+			if (!sstream) break;
+			params.push_back(param);
 		}
+	}
+}
+
+std::string irc::message::str() const
+{
+	std::string result;
+	std::size_t i;
+
+	if (!origin.nickname.empty()) {
+		result += ':';
+		result += origin.nickname;
+		result += '!';
+		result += origin.user;
+		result += '@';
+		result += origin.host;
+		result += ' ';
+	} else if (!origin.host.empty()) {
+		result += ':';
+		result += origin.host;
+		result += ' ';
+	}
+	result += command;
+	result += ' ';
+	if (!params.empty()) {
+		for (i = 0; i < params.size() - 1; ++i) {
+			result += params[i];
+			result += ' ';
+		}
+		result += ':';
+		result += params[i];
 	}
 	return result;
 }
+
+irc::client::client() : stream(), param()
+{
+}
+
+irc::client::client(const param_type& p) : stream(), param()
+{
+	open(p);	
+}
+
+irc::client::~client()
+{
+	close();
+}
+
+const irc::client::param_type* irc::client::rdparam() const
+{
+	return &param;
+}
+
+swoope::socketstream* irc::client::rdstream()
+{
+	return &stream;
+}
+
+bool irc::client::is_open() const
+{
+	return stream.is_open();
+}
+
+void irc::client::open(const param_type& p)
+{
+	std::string line;
+	irc::message msg;
+	const int reg_complete = 10;
+	int reg_progress = 0;
+
+	stream.clear();
+	stream.open(p.host, p.port);
+	if (!stream) return;
+	stream.rdbuf()->pubsetbuf(0, 1024);
+	stream.unsetf(std::ios_base::unitbuf);
+	if (!p.password.empty())
+		stream << "PASS " << p.password << "\r\n";
+	stream <<
+		"NICK " << p.nickname << "\r\n" <<
+		"USER " << p.nickname << " 0 * :" << p.nickname << "\r\n";
+	stream.flush();
+	if (!stream) {
+		stream.close();
+		return;
+	}
+	while (std::getline(stream, line)) {
+		msg.str(line);
+		line.erase(--line.end());
+		std::cout << line << std::endl;
+		if (msg.command == "PING") {
+			stream << "PONG " << msg.params.back() << "\r\n";
+			stream.flush();
+			continue;
+		}
+		std::size_t number = static_cast<std::size_t>(std::atoi(
+							msg.command.c_str()));
+		if (number <= 4) {
+			reg_progress += number;
+			if (reg_progress == reg_complete) break;
+		} else if (number >= 400) {
+			stream.setstate(std::ios_base::failbit);
+			break;
+		}
+	}
+	if (!stream) stream.close();
+	else param = p;
+}
+
+bool irc::client::read(irc::message& msg)
+{
+	std::string line;
+	
+	if (is_open() == false) return false;
+	std::getline(stream, line);
+	if (!stream) return false;
+	msg.str(line);
+	return true;
+}
+
+void irc::client::write(const irc::message& msg)
+{
+	if (is_open() == false) return;
+	stream << msg.str() << "\r\n" << std::flush;
+}
+
+void irc::client::shutdown(std::ios_base::openmode how)
+{
+	stream.shutdown(how);
+}
+
+void irc::client::close()
+{
+	stream.close();
+}
+
+bool irc::client::operator!() const
+{
+	return !stream;
+}
+

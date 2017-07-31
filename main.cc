@@ -1,46 +1,52 @@
 #include "irc.hh"
 #include <iostream>
-#include <utility>
-using namespace std;
 
+/*
+ * main.cc
+ * Author: Mark Swoope
+ * Date: July 2017
+ */
 
 int main(int argc, char* argv[])
 {
-	swoope::socketstream client;
-	irc::message msg;
-	string line, nickname, owner;
+	irc::client client;
+	irc::client::param_type params;
+	irc::message rmsg, wmsg;
 
-	if (argc != 6) {
-		cout << 
-			"CSE-CLUB IRC BOT" << endl <<
-			"Parameters: HOST PORT NICK OWNER CHANNEL" << endl <<
-			endl;
-		return 0;
-	}
-	nickname = argv[3];
-	owner = argv[4];
-	cout << "Connecting..." << endl;
-	client = std::move(irc::connect(irc::connect_params{argv[1], argv[2],
-							nickname, owner, ""}));
-	if (!client) {
-		cout << "Failed to connect." << endl;
+	params.host = argv[1];
+	params.port = argv[2];
+	params.nickname = argv[3];
+	params.owner = argv[4];
+	std::cout << "Connecting..." << std::endl;
+	client.open(params);
+	if (!client.is_open()) {
+		std::cout << "Failed to connect." << std::endl;
 		return 1;
 	}
-	cout << "Connection established." << endl;
-	client << "JOIN " << argv[5] << "\r\n" << flush;
-	while (std::getline(client, line)) {
-		if (line.back() == '\r') line.pop_back();
-		cout << line << endl;
-		msg = std::move(irc::message::from_string(line));
-		if (msg.command == "PING") {
-			client << "PONG " << msg.params.back() << "\r\n" <<
-								flush;
-		} else if (msg.command == "PRIVMSG") {
-			if (msg.origin.nickname == owner &&
-					msg.params.front() == nickname) {
-				client << msg.params.back() << "\r\n" << flush;
+	std::cout << "Connection established." << std::endl;
+	wmsg.clear();
+	wmsg.command = "JOIN";
+	wmsg.params.push_back(argv[5]);
+	client.write(wmsg);
+	while (client.read(rmsg)) {
+		std::cout << rmsg.str() << std::endl;
+		if (rmsg.command == "PING") {
+			wmsg.clear();
+			wmsg.command = "PONG";
+			wmsg.params.push_back(rmsg.params.back());
+			client.write(wmsg);
+		} else if (rmsg.command == "PRIVMSG") {
+			if (
+			rmsg.params.front() == client.rdparam()->nickname &&
+			rmsg.origin.nickname == client.rdparam()->owner) {
+				wmsg.clear();
+				wmsg.str(rmsg.params.back());
+				client.write(wmsg);
+				if (wmsg.command == "QUIT")
+					client.shutdown();
 			}
 		}
 	}
 	return 0;
 }
+

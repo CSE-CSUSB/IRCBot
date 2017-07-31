@@ -5,5 +5,5 @@ pause
 goto :eof
 )
 @echo on
-cl /EHsc main.cc irc.cc /link Ws2_32.lib
+cl /EHsc /W4 main.cc irc.cc /link Ws2_32.lib
 
