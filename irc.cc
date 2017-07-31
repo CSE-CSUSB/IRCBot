@@ -114,6 +114,7 @@ void irc::client::open(const param_type& p)
 	const int reg_complete = 10;
 	int reg_progress = 0;
 
+	if (is_open() == true) return;
 	stream.clear();
 	stream.open(p.host, p.port);
 	if (!stream) return;
@@ -171,11 +172,13 @@ void irc::client::write(const irc::message& msg)
 
 void irc::client::shutdown(std::ios_base::openmode how)
 {
+	if (is_open() == false) return;
 	stream.shutdown(how);
 }
 
 void irc::client::close()
 {
+	if (is_open() == false) return;
 	stream.close();
 }
 
